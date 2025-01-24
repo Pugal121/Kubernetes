@@ -1,0 +1,72 @@
+Kubernetes :-
+
+1. Create Kubernetes Cluster using Kubeadm
+
+=> Each Master and Worker node should hold "2CPU" and "4GB-Memory" for good performance
+=> open 2 terminal for 1 master node and 1 worker node
+=> Terminal-1: ssh -i clusterX.pem ubuntu@training-X-master.training.infypedia.org
+   Terminal-2: ssh -i clusterX.pem ubuntu@training-X-worker.training.infypedia.org
+=> (check memory and swap is present or not)
+  : free -m 
+=> if swap is present(needed to turned off to avoid error)
+  : sudo swapoff -a  (for both master and worker)
+  : free -m  (Swap - 0 0 )
+=> update and install curl ,apt-transport-https in all nodes(master and worker)
+  : sudo apt-get update && sudo  apt-get install -y apt-transport-https curl
+=> add this command for all node to check "OK" 
+  : sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+=>    for all nodes
+  : sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+=>  for all node
+  : sudo apt-get update && sudo apt-get install -y kubelet=1.32.0-00 kubeadm=1.32.0-00 kubectl=1.32.0-00 docker.io
+=> start and enable docker on master and worker node
+  : sudo systemctl start docker && sudo systemctl enable docker
+  
+upto here all commands are common for both mastr and worker node
+
+Master Node
+=> initializing kubernetics cluster in (only)Master node
+  : sudo kubeadm init (or)
+  : sudo kubeadm init --apiserver-advertise-address 192.168.2.11 --pod-network-cidr=172.16.0.0/16
+  (for advertisng my kubernetes on ip(192.168.2.11) and pods range should be in b/w (172.16.0.0/16))
+
+=> identify the message "Your Kubernetes control-plane has initialized successfully!"
+=> Now master node is ready and proceed the below steps to access the cluster
+   1. "To start using the cluster, you need to run the following as a regular user" #statement already present in the terminal 
+       : mkdir -p $HOME/ .kube 
+	   : sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+	   : sudo chown $(id -u):$(id -g) $HOME/.kube/config
+   2. "Alternatively, if you r using root user, you can these to start using cluster
+       : export KUBECONFIG=/etc/kubernetes/admin.conf
+	   
+=> to check the master node status (time will take to start)
+   : kubectl get nodes
+   NAME                    STATUS    ROLE                       AGE   VERSION
+   kubernetes-master       Running   Control-plane, master      65s    v1.20.0
+=> to deploy a pod network to the cluster, this cmd will create required resource  path: https://github.com/flannel-io/flannel#deploying-flannel-manually
+   : kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+=> search cmd in the terminal "Then youncan join any no of worker node by running the following on each node"
+  cpy frm trm  : kubeadm join 192..... --token jsixfv....\--discovery-token .... sha...
+=> now go to worker node
+
+Worker Node 1
+=>  add "sudo" paste the cmd in the each worker node to join with master
+   : cpy frm trm  : sudo kubeadm join 192..... --token jsixfv....\--discovery-token .... sha...
+=> check the below message is in the terminal
+  "This node has joined the cluster"
+  
+Worker Node 2
+=>  add "sudo" paste the cmd in the each worker node to join with master
+   : cpy frm trm  : sudo kubeadm join 192..... --token jsixfv....\--discovery-token .... sha...
+=> check the below message is in the terminal
+  "This node has joined the cluster"
+  
+Master Node
+=> to the worker node is linked with master(cluster)
+  : kubectl get nodes
+=> to describe the node information and status
+  : kubectl describe node "worker node name"
+  
+Now kubernetes cluster setup is ready completely
+   
