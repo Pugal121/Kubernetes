@@ -1,7 +1,8 @@
 Kubernetes :-
 
 1. Create Kubernetes Cluster using Kubeadm
-
+Requirements:    Server               Master Node                 Worker Node 
+             (2 ubuntu server)   Min 2vCPU and 2GB RAM        min 1vCPU and 2GB RAM
 => Each Master and Worker node should hold "2CPU" and "4GB-Memory" for good performance
 => open 2 terminal for 1 master node and 1 worker node
 => Terminal-1: ssh -i clusterX.pem ubuntu@training-X-master.training.infypedia.org
