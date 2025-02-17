@@ -1,0 +1,81 @@
+create kubernetes cluster using Kubeadm(Master node and worker node)
+=======================================================
+=> Launch 2 EC2 instance with "Ubuntu 20.04", "2vCPU & RAM = 2GB or more ", 10gb for master node and worker node
+=> Connect those two instance Eg: master node => ssh -i my-key.pem ubuntu@54.123.45.67
+                                  worker node => ssh -i my-key.pem ubuntu@54.123.37.45
+=> check the internet connection for bost master node and worker node
+    : ping "Master_node ip address" in master terminal
+    : ping "worker_node ip address"	in worker terminal
+
+=> to rename the host name:
+    : hostnamectl set-hostname master-node   (master terminal)
+	: hostnamectl set-hostname worker-node   (worker terminal)
+=> to check hostname 
+    : hostname
+=> Edit the /etc/hosts toinclude mapping of IP address to hostname
+    : sudo nano /etc/hosts              (master terminal) && (worker terminal)
+=> paste this content in editor file and press  Ctrl X  & Y & Enter    (master && worker terminal)
+
+   54.123.45.67   master-node
+   54.123.37.45   worker-node
+   
+=> check communication b/w master and worker node
+    : ping worker-node    (master terminal)
+	: ping master-node    (worker terminal)
+
+=> Disable swap on Both nodes
+   : free -h   (swap 0   0 )
+   :sudo swapoff -a            (master && worker terminal)
+   :sudo su -             (master && worker terminal)
+
+=> update the package and their version
+    : sudo apt-get update && sudo apt-get upgrade -y              (master && worker terminal)
+	
+=> Install necessary package "apt-transport-https", "curl"
+    : sudo apt-get update && sudo apt-get install -y apt-transport-https curl             (master && worker terminal)
+
+=> Install Docker
+    : sudo apt-get install docker.io -y              (master && worker terminal)
+	
+=> Add Googles apt key to verify release
+    : curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    : sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+    : sudo apt-get install gpg
+
+=>  Run these Below command
+    : sudo mkdir -p -m 755 /etc/apt/keyrings
+    : echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list   
+    : curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    : sudo apt update 
+	: sudo apt install -y kubelet kubeadm kubectl
+
+Upto here is common steps for master and worker node
+
+Master Node
+===========
+=> To run kubeadm init command on desired pod network CIDR
+   Replace with master ip address
+   : kubeadm init --pod-network-cidr=54.123.45.67/16 -v=9
+   
+=> Find the similar content in the terminal to copy and execute each command  (only Master)
+    "mkdir -p $HOME/.kube"
+    "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/cofig"
+    "sudo chown(id -u):$(id -g) $HOME/.kube/config"
+
+=> Find this cmd toinstall network plugin to communicate with worker node. run the command
+   "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+   
+   Worker Node:
+=> find the similar command in previous "kubeadm init" lists to connect the worker node
+  copy this cmd and ru in worker node to connect bothe master and worker node
+  " kubeadm join 172.31.14.32:6443 --token mcvd2n.aqvyp59vq3inhtks --discovery-token-ca-cert-hash 
+    sha256:5ab6e6d695d31c05a4e4cde8f6e7b14ff0d0b450383e9b255270be90904de128"
+
+=> if it throws error go to security group and enable "All trffic" for Both nodes
+
+=> Find this cmd toinstall network plugin to communicate with worker node. run the command on Master and worker node
+   "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+   
+=> to conform whether the nodes are connected, it visible "Control plane(Master node)" and worker node
+   : kubectl get nodes
+   : kubectl get nodes -o wide
