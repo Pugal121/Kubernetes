@@ -1,4 +1,4 @@
-create kubernetes cluster using Kubeadm(Master node and worker node)
+create kubernetes cluster using Kubeadm(Master node and worker node) //working
 =======================================================
 => Launch 2 EC2 instance with "Ubuntu 20.04", "2vCPU & RAM = 2GB or more ", 10gb for master node and worker node
 => Connect those two instance Eg: master node => ssh -i my-key.pem ubuntu@54.123.45.67
@@ -79,3 +79,102 @@ Master Node
 => to conform whether the nodes are connected, it visible "Control plane(Master node)" and worker node
    : kubectl get nodes
    : kubectl get nodes -o wide
+######################################################################################################################
+
+Create Kubernetes resources(objects) like pods, Deployment, services, Namespaces, secrets, configmap, etc.
+==========================================================================================================
+
+=> once after creating a kubernetes cluster, to deploy an application we need kubernetes objects monitor and manage it
+=> visit for more details: https://kubernetes.io/docs/concepts/overview/working-with-objects/
+Deployment.yml is a blueprint for my application
+'''
+apiVersion: apps/v1     (
+kind: Deployment        (type of resource to specify)
+metadata:                 
+  name: nginx-deployment (
+spec:
+  selector:              (
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+'''
+=> to check any deployment resources already done
+: kubectl get deploy
+=> to check any pods is running already
+: kubectl get pods
+=> to get the kubernetes services running back end
+: kubectl get svc
+o/p:
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP    PORTS    AGE
+Kubrnetes    Cluster-IP  10.100.0.1       <none>        443/TCP    51m
+
+=> steps to create a deployment file(name it anything) 
+: vi nginx-basic.yaml
+"""
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14
+"""
+:ls
+=> save it and run the below command to create pods and container
+: kubectl apply -f nginx-basic.yaml
+                   (file name)
+make sure there is no error of api version which matchs to the cluster
+
+=> find the below message
+(o/p): " deployment.apps/deployment-nginx created"
+=> to check the created deployment in the list
+: kubectl get deploy
+(o/p):     NAME            READY    UP-TO-DATE   AVAILABLE AGE
+       Deployment-nginx    2/2      2            2         52s
+	                       pods
+=> to check the no of pods created
+: kubectl get pods (it will list 2 pods in running state)						   
+(o/p):
+NAME                         READY     STATUS     RESTARTS   AGE
+deployment-nginx-12345-jdvs  1/1       Running    0          105s
+deployment-nginx-12345-ygyw  1/1       Running    0          105s
+Pods                cont-id  Container
+
+=> Testing
+=> delete a pods to check the pods is recreated or not
+: kubectl delete pod <pod-name>
+:kubectl get pods
+
+=> to edit replicaset to maintain with mentioned pods in yml file
+   1. 1st way to edit replicaset value
+	 : vi deployment-nginx.yml
+	    replicaset: 0
+     : kubectl apply -f nginx-basic.yaml
+	 :kubectl get pods
+	 
+   2.2nd way is to edit replicaset, directl from cluster resource 
+     run below cmd and modify it
+     : kubectl edit deploy deployment-nginx
+	   replicase :1 
+	  : kubectl get deploy
+	  : kubectl get pods 
